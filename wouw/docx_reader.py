@@ -6,15 +6,71 @@ from docx.table import _Cell, Table
 from docx.text.paragraph import Paragraph
 
 
+class ParseState:
+    START = 0
+
+
 class DocxReader:
     def __init__(self, filename):
         self.filename = filename
         doc = Document(filename)
+        self.requirements = self.extract_requirements(doc)
+
+    def extract_requirements(self, doc):
+        state = ParseState.START
+
+        requirements = []
+        requirement = None
+
         for item in iter_block_items(doc):
-            if isinstance(item, Paragraph):
-                print(item.text)
-            elif isinstance(item, Table):
-                print('Table')
+            if state == ParseState.START:
+                text = ''
+
+                if isinstance(item, Paragraph):
+                    text = item.text
+                elif isinstance(item, Table):
+                    text = '(table)'
+
+                if self.is_req_start(text):
+                    if requirement:
+                        requirements.append(requirement)
+
+                    requirement = Requirement()
+
+                    ids = self.extract_ids(text)
+                    if len(ids) > 0:
+                        requirement.id = ids[0]
+
+                    requirement.text = text
+
+        if requirement:
+            requirements.append(requirement)
+
+        return requirements
+
+    def is_req_start(self, text):
+        return len(text) > 0 and text[0] == '['
+
+    def extract_ids(self, text):
+        start = text.find('[')
+
+        if start != 0:
+            return []
+
+        finish = text.find(']')
+
+        id_text = text[start + 1:finish]
+
+        if id_text:
+            return id_text.split(' ')
+        else:
+            return []
+
+
+class Requirement:
+    def __init__(self):
+        self.id = None
+        self.text = None
 
 
 def iter_block_items(parent):
