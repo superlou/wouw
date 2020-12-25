@@ -4,8 +4,20 @@ import time
 import argparse
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from rich import print
+from rich.console import Console
 from .docx_reader import DocxReader
+
+
+console = Console()
+print = console.print
+
+
+def analyze_requirements_docx(filename):
+    dr = DocxReader(filename, 'r')
+    print('')
+    print('✓ Updated [color(2)]{}[/color(2)]'.format(dr.filename))
+    print('✓ {} requirements parsed'.format(len(dr.requirements)))
+    print('  └ Next requirement:', dr.next_requirement_id())
 
 
 class EventHandler(FileSystemEventHandler):
@@ -15,11 +27,7 @@ class EventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == self.watched_file:
-            dr = DocxReader(event.src_path, 'r')
-            print('')
-            print('Updated', dr.filename)
-            print('{} requirements parsed'.format(len(dr.requirements)))
-            print('Next requirement:', dr.next_requirement_id())
+            analyze_requirements_docx(event.src_path)
 
 
 def main():
