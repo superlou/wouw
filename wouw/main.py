@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 import os
 import time
+import argparse
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from docx_reader import DocxReader
+from .docx_reader import DocxReader
 
 
 class EventHandler(FileSystemEventHandler):
@@ -13,11 +14,16 @@ class EventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == self.watched_file:
-            DocxReader(event.src_path)
+            dr = DocxReader(event.src_path)
+            print([r.id for r in dr.requirements])
 
 
 def main():
-    watched_file = './test.docx'
+    parser = argparse.ArgumentParser(description='Watch docx file for changes')
+    parser.add_argument('file')
+    args = parser.parse_args()
+
+    watched_file = args.file
     event_handler = EventHandler(watched_file)
     observer = Observer()
     observer.schedule(event_handler,
