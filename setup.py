@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=['wouw'],
-    install_requires=['python-docx', 'watchdog'],
+    install_requires=['python-docx', 'watchdog', 'rich'],
     tests_require=['pytest'],
     entry_points = {
         'console_scripts': ['wouw=wouw:main']

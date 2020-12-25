@@ -4,6 +4,7 @@ import time
 import argparse
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from rich import print
 from .docx_reader import DocxReader
 
 
