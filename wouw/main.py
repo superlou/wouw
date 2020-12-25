@@ -15,8 +15,11 @@ class EventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == self.watched_file:
-            dr = DocxReader(event.src_path)
-            print([r.id for r in dr.requirements])
+            dr = DocxReader(event.src_path, 'r')
+            print('')
+            print('Updated', dr.filename)
+            print('{} requirements parsed'.format(len(dr.requirements)))
+            print('Next requirement:', dr.next_requirement_id())
 
 
 def main():

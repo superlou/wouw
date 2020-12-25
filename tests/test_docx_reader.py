@@ -20,3 +20,8 @@ def test_extract_ids():
     dr = DocxReader('tests/data/test.docx')
     assert dr.extract_ids('[a1234] text') == ['a1234']
     assert dr.extract_ids('[a1234 b421] text') == ['a1234', 'b421']
+
+
+def test_determine_next_id():
+    dr = DocxReader('tests/data/test.docx', 'r')
+    assert dr.next_requirement_id() == 'r7'
