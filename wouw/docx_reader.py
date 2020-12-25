@@ -41,6 +41,9 @@ class DocxReader:
                     if len(ids) > 0:
                         requirement.id = ids[0]
 
+                    if len(ids) > 1:
+                        requirement.trace_ids = ids[1:]
+
                     requirement.text = text
 
         if requirement:
@@ -70,6 +73,7 @@ class DocxReader:
 class Requirement:
     def __init__(self):
         self.id = None
+        self.trace_ids = []
         self.text = None
 
 

@@ -11,6 +11,9 @@ def test_docx_reader_reads_requirements():
     assert len(dr.requirements) == 6
     assert [r.id for r in dr.requirements] == ['r1', 'r2', 'r3',
                                                'r4', 'r5', 'r6']
+    assert [r.trace_ids for r in dr.requirements] == [
+        [], [], [], [], ['axp-0003'], ['axp-1421', 'axp-17']
+    ]
 
 
 def test_extract_ids():
