@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-import time
+from threading import Timer
 import argparse
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -21,15 +21,24 @@ def analyze_requirements_docx(filename):
     print('Next requirement:', dr.next_requirement_id())
 
 
-class EventHandler(FileSystemEventHandler):
+class DebouncedEventHandler(FileSystemEventHandler):
     def __init__(self, watched_file, events):
         super().__init__()
         self.watched_file = watched_file
         self.events = events
+        self.debounce_timers = {}
 
     def on_modified(self, event):
         if event.src_path == self.watched_file:
-            self.events.put(event.src_path)
+            self.debounced_enqueue(event.src_path)
+
+    def debounced_enqueue(self, file):
+        if file in self.debounce_timers:
+            self.debounce_timers[file].cancel()
+
+        timer = Timer(0.2, lambda: self.events.put(file))
+        self.debounce_timers[file] = timer
+        timer.start()
 
 
 def main():
@@ -40,7 +49,7 @@ def main():
     events = Queue()
 
     watched_file = args.file
-    event_handler = EventHandler(watched_file, events)
+    event_handler = DebouncedEventHandler(watched_file, events)
     observer = Observer()
     observer.schedule(event_handler,
                       os.path.dirname(watched_file),
