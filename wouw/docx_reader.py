@@ -13,11 +13,10 @@ class ParseState:
 class DocxReader:
     def __init__(self, filename, id_prefix=None):
         self.filename = filename
-        doc = Document(filename)
-        self.requirements = self.extract_requirements(doc)
         self.id_prefix = id_prefix
 
-    def extract_requirements(self, doc):
+    def extract_requirements(self):
+        doc = Document(self.filename)
         state = ParseState.START
 
         requirements = []
@@ -69,16 +68,6 @@ class DocxReader:
             return id_text.split(' ')
         else:
             return []
-
-    def next_requirement_id(self):
-        numbers = [r.id[len(self.id_prefix):] for r in self.requirements
-                   if r.id.find(self.id_prefix) != -1]
-        numbers = [int(n) for n in numbers]
-
-        if len(numbers) > 0:
-            return self.id_prefix + str(max(numbers) + 1)
-        else:
-            return self.id_prefix + str(1)
 
 
 class Requirement:

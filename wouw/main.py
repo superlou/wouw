@@ -49,18 +49,22 @@ def create_observer(project, events_queue):
     return observer
 
 
-def print_document_status(document):
-    dr = document.dr
+def print_document_status(document, verb):
     print('')
-    print('Updated [color(2)]{}[/color(2)]'.format(dr.filename))
-    print('{} requirements parsed'.format(len(dr.requirements)))
-    print('Next requirement:', dr.next_requirement_id())
+    print(f'{verb} [color(2)]{document.path}[/color(2)]')
+    print(f'{len(document.requirements)} requirements parsed')
+    print('Next requirement:', document.next_requirement_id())
+
+    for warning in document.warnings:
+        print(f'[color(1)]{warning}[/color(1)]')
 
 
 def main():
     parser = argparse.ArgumentParser(description='Watch docx file for changes')
     parser.add_argument('-c', '--config', default='project.json',
                         help='Project configuration JSON file')
+    parser.add_argument('-w', '--watch', action='store_true',
+                        help='Watch project files for changes')
     args = parser.parse_args()
 
     try:
@@ -73,6 +77,14 @@ def main():
         return
 
     project = Project(config, Path(args.config).parent)
+
+    for document in project.documents:
+        verb = 'Watching' if args.watch else 'Scanned'
+        print_document_status(document, verb)
+
+    if not args.watch:
+        return
+
     events = Queue()
     observer = create_observer(project, events)
 
@@ -82,7 +94,7 @@ def main():
             try:
                 document = project.get_document_by_path(Path(event))
                 document.refresh()
-                print_document_status(document)
+                print_document_status(document, 'Updated')
             except IOError:
                 # MS Word locks files sometimes
                 pass

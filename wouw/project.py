@@ -30,4 +30,33 @@ class Document:
         self.refresh()
 
     def refresh(self):
-        self.dr = DocxReader(self.path, self.id_prefix)
+        dr = DocxReader(self.path, self.id_prefix)
+        self.requirements = dr.extract_requirements()
+        self.warnings = self.check_for_duplicate_ids()
+
+    def next_requirement_id(self):
+        numbers = [r.id[len(self.id_prefix):] for r in self.requirements
+                   if r.id.find(self.id_prefix) != -1]
+        numbers = [int(n) for n in numbers]
+
+        if len(numbers) > 0:
+            return self.id_prefix + str(max(numbers) + 1)
+        else:
+            return self.id_prefix + str(1)
+
+    def check_for_duplicate_ids(self):
+        ids = [requirement.id for requirement in self.requirements]
+        duplicates = sorted(list_duplicates(ids))
+        warnings = [f'Duplicate requirement ID: "{id}"'
+                    for id in duplicates]
+
+        return warnings
+
+
+def list_duplicates(seq):
+    seen = set()
+    seen_add = seen.add
+    # adds all elements it doesn't know yet to seen and all other to seen_twice
+    seen_twice = set(x for x in seq if x in seen or seen_add(x))
+    # turn the set into a list (as requested)
+    return list(seen_twice)
