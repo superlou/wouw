@@ -8,20 +8,11 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from rich.console import Console
 from queue import Queue
-from .docx_reader import DocxReader
 from .project import Project
 
 
 console = Console()
 print = console.print
-
-
-def analyze_requirements_docx(filename):
-    dr = DocxReader(filename, 'r')
-    print('')
-    print('Updated [color(2)]{}[/color(2)]'.format(dr.filename))
-    print('{} requirements parsed'.format(len(dr.requirements)))
-    print('Next requirement:', dr.next_requirement_id())
 
 
 class DebouncedEventHandler(FileSystemEventHandler):
@@ -44,13 +35,33 @@ class DebouncedEventHandler(FileSystemEventHandler):
         timer.start()
 
 
+def create_observer(project, events_queue):
+    observer = Observer()
+
+    for path in project.paths:
+        event_handler = DebouncedEventHandler(str(path), events_queue)
+        # Watching the directory is required for LibreOffice
+        observer.schedule(event_handler,
+                          path.parent,
+                          recursive=True)
+
+    observer.start()
+    return observer
+
+
+def print_document_status(document):
+    dr = document.dr
+    print('')
+    print('Updated [color(2)]{}[/color(2)]'.format(dr.filename))
+    print('{} requirements parsed'.format(len(dr.requirements)))
+    print('Next requirement:', dr.next_requirement_id())
+
+
 def main():
     parser = argparse.ArgumentParser(description='Watch docx file for changes')
     parser.add_argument('-c', '--config', default='project.json',
                         help='Project configuration JSON file')
     args = parser.parse_args()
-
-    events = Queue()
 
     try:
         config = json.load(open(args.config))
@@ -62,25 +73,17 @@ def main():
         return
 
     project = Project(config, Path(args.config).parent)
-
-    observer = Observer()
-
-    for filename in project.filenames:
-        event_handler = DebouncedEventHandler(str(filename), events)
-        # Watching the directory is required for LibreOffice
-        observer.schedule(event_handler,
-                          filename.parent,
-                          recursive=True)
-
-    observer.start()
+    events = Queue()
+    observer = create_observer(project, events)
 
     try:
         while True:
             event = events.get()
-            print(event)
             try:
-                analyze_requirements_docx(event)
-            except IOError as e:
+                document = project.get_document_by_path(Path(event))
+                document.refresh()
+                print_document_status(document)
+            except IOError:
                 # MS Word locks files sometimes
                 pass
 

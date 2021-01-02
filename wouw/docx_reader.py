@@ -74,7 +74,11 @@ class DocxReader:
         numbers = [r.id[len(self.id_prefix):] for r in self.requirements
                    if r.id.find(self.id_prefix) != -1]
         numbers = [int(n) for n in numbers]
-        return self.id_prefix + str(max(numbers) + 1)
+
+        if len(numbers) > 0:
+            return self.id_prefix + str(max(numbers) + 1)
+        else:
+            return self.id_prefix + str(1)
 
 
 class Requirement:
