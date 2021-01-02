@@ -14,7 +14,7 @@ setuptools.setup(
     packages=['wouw'],
     install_requires=['python-docx', 'watchdog', 'rich'],
     tests_require=['pytest'],
-    entry_points = {
+    entry_points={
         'console_scripts': ['wouw=wouw:main']
     },
     classifiers=[
