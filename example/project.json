@@ -1,0 +1,12 @@
+{
+  "documents": [
+    {
+      "file": "specification.docx",
+      "id_prefix": "r"
+    },
+    {
+      "file": "customer_requirements.docx",
+      "id_prefix": "c-"
+    }
+  ]
+}

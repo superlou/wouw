@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 import os
+from pathlib import Path
+import json
 from threading import Timer
 import argparse
 from watchdog.observers import Observer
@@ -7,6 +9,7 @@ from watchdog.events import FileSystemEventHandler
 from rich.console import Console
 from queue import Queue
 from .docx_reader import DocxReader
+from .project import Project
 
 
 console = Console()
@@ -43,28 +46,42 @@ class DebouncedEventHandler(FileSystemEventHandler):
 
 def main():
     parser = argparse.ArgumentParser(description='Watch docx file for changes')
-    parser.add_argument('file')
+    parser.add_argument('-c', '--config', default='project.json',
+                        help='Project configuration JSON file')
     args = parser.parse_args()
 
     events = Queue()
 
-    watched_file = args.file
-    event_handler = DebouncedEventHandler(watched_file, events)
-    observer = Observer()
-    observer.schedule(event_handler,
-                      os.path.dirname(watched_file),
-                      recursive=True)
-    observer.start()
+    try:
+        config = json.load(open(args.config))
+    except FileNotFoundError:
+        print(f'Configuration file "{args.config}" not found')
+        return
+    except json.JSONDecodeError as e:
+        print(f'Parsing error in "{args.config}"\n{e}')
+        return
 
-    print('Watching', watched_file)
+    project = Project(config, Path(args.config).parent)
+
+    observer = Observer()
+
+    for filename in project.filenames:
+        event_handler = DebouncedEventHandler(str(filename), events)
+        # Watching the directory is required for LibreOffice
+        observer.schedule(event_handler,
+                          filename.parent,
+                          recursive=True)
+
+    observer.start()
 
     try:
         while True:
             event = events.get()
+            print(event)
             try:
                 analyze_requirements_docx(event)
             except IOError as e:
-                # MS Word locks files during its first save
+                # MS Word locks files sometimes
                 pass
 
     except KeyboardInterrupt:
